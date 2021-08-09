@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Bầu Cua Tôm Cá</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<style>
+		body{
+			margin: 10px;
+			font-size: 2em;
+		}
+		
+		select, input{
+			font-size: 1em;
+		}
+		
+		div{
+			margin: 10px;
+		}
+		
+		input, option, select{
+			border: 2px solid black;
+			border-radius: 5px;
+			background: none;
+		}
+	</style>
+</head>
+<body>
+	<h1>Hosting Game</h1>
+	<div>
+		<lable>dice selector</lable>
+		<select class="selector" id="select0">
+			<option value='stag'>stag</option>
+			<option value='gourd'>gourd</option>
+			<option value='rooster'>rooster</option>
+			<option value='fish'>fish</option>
+			<option value='crab'>crab</option>
+			<option value='prawn'>prawn</option>
+		</select>
+		<select class="selector" id="select1">
+			<option value='stag'>stag</option>
+			<option value='gourd'>gourd</option>
+			<option value='rooster'>rooster</option>
+			<option value='fish'>fish</option>
+			<option value='crab'>crab</option>
+			<option value='prawn'>prawn</option>
+		</select>
+		<select class="selector" id="select2">
+			<option value='stag'>stag</option>
+			<option value='gourd'>gourd</option>
+			<option value='rooster'>rooster</option>
+			<option value='fish'>fish</option>
+			<option value='crab'>crab</option>
+			<option value='prawn'>prawn</option>
+		</select>
+	</div>
+	
+	<div>
+		<input type="button" id="unlock" value="unlock bets"/>
+		<input type="button" id="lock" value="lock bets"/>
+		<input type="button" id="submit" value="submit"/>
+	</div>
+	
+	<script>
+		const select = [
+			document.getElementById('select0'),
+			document.getElementById('select1'),
+			document.getElementById('select2')
+		];
+		
+		const unlock = document.getElementById('unlock');
+		const lock = document.getElementById('lock');
+		const submit = document.getElementById('submit');
+		
+		const data = {
+			lock: false,
+			results: select.map(x => x.value),
+			gameId: 0
+		};
+		
+		function updateJSON() {
+			fetch('/data.json', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(data),
+			})
+		} // end of update JSON
+		
+		unlock.style.borderColor = 'green';
+		
+		unlock.onclick = () => {
+			data.lock = false;
+			unlock.style.borderColor = 'green';
+			lock.style.borderColor = 'black';
+			
+			updateJSON();	
+		};
+		
+		lock.onclick = () => {
+			data.lock = true;
+			unlock.style.borderColor = 'black';
+			lock.style.borderColor = 'green';
+			
+			updateJSON();
+		};
+		
+		submit.onclick = () => {
+			data.results = select.map(x => x.value);
+			data.gameId = Date.now();
+			
+			data.lock = false;
+			unlock.style.borderColor = 'green';
+			lock.style.borderColor = 'black';
+			
+			updateJSON();
+		};
+	</script>
+</body>
+</html>

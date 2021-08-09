@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Bầu Cua Tôm Cá</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<style>
+		body{
+			margin: 0px;
+		}
+		
+		canvas{
+			display: block;
+			margin: auto;
+		}
+	</style>
+</head>
+<body>
+	<canvas/>
+	<script>
+		class Icon {
+			constructor(context, img, x, y, width, height) {
+				this.context = context;
+				this.img = img;
+				this.x = x;
+				this.y = y;
+				this.width = width;
+				this.height = height;
+				this.number = 0;
+				//this.io = new IconIO(context, x, y, width, height);
+			} // end of constructor
+			
+			draw() {
+				// draw button
+				this.context.fillStyle = 'white';
+				this.context.beginPath();
+				this.context.moveTo(this.x + this.width / 2, this.y + this.height / 6);
+				this.context.lineTo(this.x + this.width / 3, this.y + this.height / 3);
+				this.context.lineTo(this.x + this.width * 2 / 3, this.y + this.height / 3);
+				this.context.closePath();
+				this.context.fill();
+				
+				this.context.beginPath();
+				this.context.moveTo(this.x + this.width / 2, this.y + this.height * 5 / 6);
+				this.context.lineTo(this.x + this.width / 3, this.y + this.height * 2/ 3);
+				this.context.lineTo(this.x + this.width * 2 / 3, this.y + this.height * 2 / 3);
+				this.context.closePath();
+				this.context.fill();
+				
+				// draw number
+				this.context.font = "60px Courier New bold";
+				this.context.fillStyle = "white";
+				this.context.fillText(
+					this.number,
+					this.x + this.width / 2 - (this.number.toString().length * 18),
+					this.y + this.height / 2 + 18);
+			} // end of draw
+			
+			increase() {
+				return ++this.number;
+			} // end of increase
+			
+			decrease() {
+				return --this.number;
+			} // end of decrease
+			
+			click(x,y) {
+				// check increase
+				if(this.x <= x && x <= this.x + this.width &&
+					this.y <= y && y <= this.y + this.height / 2) {
+					return 1;
+				} // end of if
+				
+				// check decrease
+				if(this.x <= x && x <= this.x + this.width &&
+					this.y + this.height / 2 <= y && y <= this.y + this.height &&
+					this.number > 0) {
+					return -1;
+				} // end of if
+				
+				return 0;
+			} // end of click
+		} // end of icon class
+		
+		class Logic {
+			constructor(context) {
+				this.context = context;
+				this.budget = 10;
+				this.icon = Array(6).fill(0)
+					.map((x,i) => new Icon(
+						context,
+						null,
+						(i % 3) * 200,
+						100 + (i >= 3) * 200,
+						200, 200));
+				
+				this.img = document.createElement('img');
+				this.img.src = './board.png';
+				
+				this.json = {lock: true, results: [], gameId: 0};
+				
+				this.draw();
+			} // end of constructor
+			
+			draw() {
+				// clear canvas
+				this.context.clearRect(0, 0, 600, 500);
+				
+				// draw background
+				this.context.fillStyle = 'black';
+				this.context.fillRect(0, 0, 600, 500);
+				
+				// draw header
+				this.context.font = "80px Courier New";
+				this.context.fillStyle = "white";
+				this.context.fillText("Budget:" + this.budget, 12, 60);
+				
+				this.context.globalAlpha = 0.5;
+				this.context.drawImage(this.img, 0, 100, 600, 400);
+				this.context.globalAlpha = 1;
+				
+				// draw icon
+				this.icon.forEach(icon => icon.draw());
+			} // end of draw
+			
+			click(x, y) {
+				// return if locked
+				if(!this.json || this.json.lock) return;
+				
+				// click board
+				this.icon.forEach(icon => {
+					let status = icon.click(x, y);
+					
+					// decrease status
+					if(status == -1) {
+						icon.decrease();
+						this.budget++;
+					} // end of if
+					
+					if(status == 1 && this.budget > 0) {
+						icon.increase();
+						this.budget--;
+					} // end of if
+				}); // end of for each
+				
+				// draw new board
+				this.draw();
+			} // end of click
+			
+			data(json) {
+				// update lock
+				this.json.lock = json.lock;
+				
+				// update game id
+				if(this.json.gameId < json.gameId) {
+					// update budget
+					this.budget += ['stag','gourd','rooster','fish','crab','prawn']
+						.map((y,j) => {
+							return this.icon[j].number *
+								(json.results.filter(x => x == y).length +
+								Math.sign(json.results.filter(x => x == y).length))})
+						.reduce((t,s) => t + s, 0);
+					
+					// reset icon
+					this.icon.forEach(icon => icon.number = 0);
+					
+					// update data
+					this.json = json;
+				} // end of if
+			} // end of data
+		} // end of logic class
+		
+		
+		
+		// init
+		function init() {
+			// canvas variables
+			const canvas = document.querySelector('canvas');
+			const context = canvas.getContext('2d');
+			
+			// resize canvas
+			canvas.width = 600;
+			canvas.height = 500;
+			
+			// return context
+			return context;
+		} // end of init
+		
+		// click event listener
+		addEventListener('click', e => {
+			let x = e.x, y = e.y;
+			
+			if(innerWidth < 600) {
+				x += scrollX;
+			} // end of if
+			
+			else {
+				x -= ((innerWidth - 600) >> 1); 
+			} // end of else
+			
+			if(innerHeight < 500) {
+				y += scrollY;
+			} // end of if
+			
+			// check click
+			logic.click(x, y);
+		}); // end of click event listener
+		
+		// touch event listener
+		addEventListener('touchstart', e => {
+			let x = e.touches[0].clientX, y = e.touches[0].clientY;
+			
+			if(innerWidth < 600) {
+				x += scrollX;
+			} // end of if
+			
+			else {
+				x -= ((innerWidth - 600) >> 1); 
+			} // end of else
+			
+			if(innerHeight < 500) {
+				y += scrollY;
+			} // end of if
+			
+			// check click
+			logic.click(x, y);
+		}); // end of touch event listener
+		
+		// start logic
+		const logic = new Logic(init());
+		
+		// checker
+		const checker = setInterval(() => {
+			fetch("data.json")
+  				.then(response => response.json())
+  				.then(json => logic.data(json));
+			logic.draw();
+		}, 1000);
+	</script>
+</body>
+</html>
